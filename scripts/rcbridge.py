@@ -21,13 +21,19 @@ hdr2fs = 80
 # Channel values
 ch = [0,0,0,0,0,0,0,0]
     
+# Node naming
+rospy.init_node('rcbridge', anonymous=False) #anonymous=True)
+
 # Start up UDP socket
-print 'RCBridge: Opening UDP Socket '
-UDP_IP = "192.168.10.178"
-UDP_PORT = 27200
+# IP address and port from parameters, or use defaults
+UDP_IP = rospy.get_param('~ipaddr',"192.168.10.178")
+UDP_PORT = rospy.get_param('~udpport',27200)
+rospy.loginfo('Opening UDP Socket to %s : %i', UDP_IP, UDP_PORT)
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
-
+# send set of eight channel settings to the Arduino/RC bridge
+# if fs_value=1, these are the failsafe settings
+# otherwise they are operational settings
 def sendpacket(data, fs_value):
     # Check control data is valid
     if len(data.data) == 8:
@@ -57,7 +63,7 @@ def sendpacket(data, fs_value):
         # Send packet
         sock.sendto(UDPdata, (UDP_IP, UDP_PORT))
     else:
-        print "Control data wrong length, should be 8"
+        rospy.logwarn('Control data wrong length: should be 8')
     
 
 def callback_ctrl(data):
@@ -72,16 +78,14 @@ def callback_failsafe(data):
     
     sendpacket(data, 1)
     
-def rcbridge():
-    # Node naming
-    rospy.init_node('rcbridge', anonymous=False) #anonymous=True)
+# def rcbridge():
 
-    # Callbacks, e.g. incoming control messages
-    rospy.Subscriber("ctrl", numpy_msg(Floats), callback_ctrl)
-    rospy.Subscriber("failsafe", numpy_msg(Floats), callback_failsafe)
+# Callbacks, e.g. incoming control messages
+rospy.Subscriber("ctrl", numpy_msg(Floats), callback_ctrl)
+rospy.Subscriber("failsafe", numpy_msg(Floats), callback_failsafe)
     
-    # spin() simply keeps python from exiting until this node is stopped
-    rospy.spin()
+# spin() simply keeps python from exiting until this node is stopped
+rospy.spin()
         
-if __name__ == '__main__':
-    rcbridge()
+#if __name__ == '__main__':
+#    rcbridge()
