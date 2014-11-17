@@ -34,9 +34,12 @@ sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 # send set of eight channel settings to the Arduino/RC bridge
 # if fs_value=1, these are the failsafe settings
 # otherwise they are operational settings
+# data is a list of 8 values
 def sendpacket(data, fs_value):
+    # debug
+    # rospy.loginfo('Trying to send %s', data)
     # Check control data is valid
-    if len(data.data) == 8:
+    if len(data) == 8:
         # Form header
         if fs_value == 1:
             hdr1 = hdr1fs
@@ -47,7 +50,7 @@ def sendpacket(data, fs_value):
             
         # Convert to values in 0 to 1000 range
         for i in range(0,8,1):
-            ch[i] = int(data.data[i] * 1000)
+            ch[i] = int(data[i] * 1000)
             
         # Compute checksum
         chksum = hdr1+hdr2
@@ -64,25 +67,37 @@ def sendpacket(data, fs_value):
         sock.sendto(UDPdata, (UDP_IP, UDP_PORT))
     else:
         rospy.logwarn('Control data wrong length: should be 8')
-    
 
 def callback_ctrl(data):
     # Log incoming control message
-    rospy.loginfo(rospy.get_caller_id()+"Inputs = %s",data.data)
+    rospy.loginfo(rospy.get_caller_id()+"Inputs = %s",data.data)    
+    sendpacket(data.data, 0)
     
-    sendpacket(data, 0)
-    
-def callback_failsafe(data):
-    # Log incoming failsafe message
-    rospy.loginfo(rospy.get_caller_id()+"Failsafe = %s",data.data)
-    
-    sendpacket(data, 1)
-    
-# def rcbridge():
+#def callback_failsafe(data):
+#    # Log incoming failsafe message
+#    rospy.loginfo(rospy.get_caller_id()+"Failsafe = %s",data.data)    
+#    sendpacket(data, 1)
 
-# Callbacks, e.g. incoming control messages
-rospy.Subscriber("ctrl", numpy_msg(Floats), callback_ctrl)
-rospy.Subscriber("failsafe", numpy_msg(Floats), callback_failsafe)
+# default failsafe settings (for when connection lost or button pressed)
+fs_default = [0.5, 0.5, 0.0, 0.5, 0.5, 0.5, 0.5, 0.5]
+
+# try to get failsafe values from parameters
+if not rospy.has_param('~failsafe'):
+    rospy.logwarn('No failsafe parameter settings - using defaults')
+    fs_data = fs_default
+else:
+    fs_data = rospy.get_param('~failsafe')
+    if len(fs_data)==8:
+        rospy.loginfo('Using failsafe data: %s',fs_data)
+    else:
+        rospy.logwarn('Wrong number of channels (%d) in failsafe parameter - using defaults', len(fs_data))
+        fs_data = fs_default
+
+# and send the failsafe values to the box
+sendpacket(fs_data, 1)
+
+# Callbacks for incoming control messages
+rospy.Subscriber("rcctrl", numpy_msg(Floats), callback_ctrl)
     
 # spin() simply keeps python from exiting until this node is stopped
 rospy.spin()

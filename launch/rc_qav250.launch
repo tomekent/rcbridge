@@ -1,0 +1,5 @@
+<launch>
+  <node name="rcbridge" pkg="rcbridge" type="rcbridge.py">
+    <rosparam param="failsafe">[0.5, 0.5, 0.0, 1.0, 0.5, 0.5, 0.5, 0.5]</rosparam>
+  </node>
+</launch>
