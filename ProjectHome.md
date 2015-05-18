@@ -1,0 +1,1 @@
+Converts ROS topic messages to UDP commands to be sent over the network to BRL's Arduino-based RC bridges, which plug into RC transmitters
