@@ -1,0 +1,15 @@
+<launch>
+ 	<node name="rcbridge" pkg="rcbridge" type="carrcbridge.py">
+    	<rosparam param="failsafe">[0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5]</rosparam>
+    	<param name="ipaddr" value="192.168.10.172"/>
+    	<param name="udpport" value="27200"/>
+		<param name="thr_rev" value="0"/>
+		<param name="str_rev" value="1"/>
+ 	</node>
+	<node pkg="vicon_bridge" type="vicon_bridge" name="vicon" output="screen">
+		<param name="stream_mode" value="ClientPull" type="str" />
+		<param name="datastream_hostport" value="192.168.10.1:801" type="str" />
+		<param name="tf_ref_frame_id" value="/world" type="str" />
+	</node>
+</launch>
+
